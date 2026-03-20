@@ -13,8 +13,11 @@ import {
   ArrowLeft,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AuthProvider, useAuth } from "@/components/admin/AuthProvider";
+import { LoginPage } from "@/components/admin/LoginPage";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -25,18 +28,17 @@ const navItems = [
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { isAuthenticated, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isActive = (href: string) => {
     if (href === "/admin") return pathname === "/admin";
     return pathname.startsWith(href);
   };
+
+  if (!isAuthenticated) return <LoginPage />;
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -92,8 +94,8 @@ export default function AdminLayout({
           })}
         </nav>
 
-        {/* Back to Site */}
-        <div className="px-3 pb-4">
+        {/* Bottom actions */}
+        <div className="px-3 pb-4 space-y-1">
           <Link
             href="/"
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
@@ -101,6 +103,13 @@ export default function AdminLayout({
             <ArrowLeft size={18} />
             Back to Site
           </Link>
+          <button
+            onClick={logout}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors w-full"
+          >
+            <LogOut size={18} />
+            Sign Out
+          </button>
         </div>
       </aside>
 
@@ -123,5 +132,17 @@ export default function AdminLayout({
         <main className="flex-1 p-4 lg:p-8">{children}</main>
       </div>
     </div>
+  );
+}
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <AuthProvider>
+      <AdminShell>{children}</AdminShell>
+    </AuthProvider>
   );
 }
