@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, Phone, ChevronDown } from "lucide-react";
+import { Menu, X, Phone, ChevronDown, ShoppingCart, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/lib/cart-store";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -30,6 +31,7 @@ const navLinks = [
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const { itemCount } = useCart();
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
@@ -108,6 +110,25 @@ export function Header() {
 
           <div className="hidden lg:flex items-center gap-3">
             <Link
+              href="/account"
+              className="p-2 text-graphite hover:text-teal transition-colors"
+              title="My Account"
+            >
+              <User className="w-5 h-5" />
+            </Link>
+            <Link
+              href="/cart"
+              className="relative p-2 text-graphite hover:text-teal transition-colors"
+              title="Cart"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {itemCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-teal text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {itemCount > 99 ? "99+" : itemCount}
+                </span>
+              )}
+            </Link>
+            <Link
               href="/contact"
               className="bg-teal hover:bg-teal/90 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
             >
@@ -116,13 +137,26 @@ export function Header() {
           </div>
 
           {/* Mobile menu button */}
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden p-2 text-graphite hover:text-teal transition-colors"
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <div className="lg:hidden flex items-center gap-2">
+            <Link
+              href="/cart"
+              className="relative p-2 text-graphite hover:text-teal transition-colors"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {itemCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-teal text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {itemCount > 99 ? "99+" : itemCount}
+                </span>
+              )}
+            </Link>
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="p-2 text-graphite hover:text-teal transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -155,6 +189,13 @@ export function Header() {
                 )}
               </div>
             ))}
+            <Link
+              href="/account"
+              onClick={() => setMobileOpen(false)}
+              className="block px-3 py-2.5 text-sm font-medium text-graphite hover:text-teal hover:bg-clean rounded-md transition-colors"
+            >
+              My Account
+            </Link>
             <div className="pt-3">
               <Link
                 href="/contact"

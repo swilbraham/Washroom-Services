@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ImagePlus, X } from "lucide-react";
 import Link from "next/link";
 import { categories } from "@/data/categories";
 import { industries } from "@/data/industries";
@@ -26,7 +26,10 @@ export default function NewProductPage() {
     industries: [] as string[],
     features: "",
     benefits: "",
+    image: "",
+    gallery: [] as string[],
   });
+  const [galleryInput, setGalleryInput] = useState("");
 
   useEffect(() => {
     if (toast) {
@@ -60,6 +63,17 @@ export default function NewProductPage() {
     }));
   };
 
+  const addGalleryImage = () => {
+    if (galleryInput.trim()) {
+      setForm((prev) => ({ ...prev, gallery: [...prev.gallery, galleryInput.trim()] }));
+      setGalleryInput("");
+    }
+  };
+
+  const removeGalleryImage = (index: number) => {
+    setForm((prev) => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== index) }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const id = `prod-${Date.now()}`;
@@ -72,8 +86,8 @@ export default function NewProductPage() {
       description: form.description,
       features: form.features.split("\n").filter(Boolean),
       benefits: form.benefits.split("\n").filter(Boolean),
-      image: `/images/products/${form.slug}.jpg`,
-      gallery: [],
+      image: form.image || `/images/products/${form.slug}.jpg`,
+      gallery: form.gallery,
       featured: form.featured,
       price: parseFloat(form.price) || 0,
       sku: form.sku,
@@ -137,6 +151,46 @@ export default function NewProductPage() {
           <div>
             <label htmlFor="description" className={labelClass}>Full Description</label>
             <textarea id="description" name="description" required rows={4} value={form.description} onChange={handleChange} className={inputClass} placeholder="Detailed product description" />
+          </div>
+        </div>
+
+        {/* Images */}
+        <div className="bg-white border border-gray-100 rounded-xl p-6 space-y-5">
+          <h3 className="text-lg font-semibold text-navy flex items-center gap-2">
+            <ImagePlus size={20} /> Product Images
+          </h3>
+          <div>
+            <label htmlFor="image" className={labelClass}>Main Image URL</label>
+            <input id="image" name="image" type="url" value={form.image} onChange={handleChange} className={inputClass} placeholder="https://example.com/product-image.jpg" />
+            <p className="text-xs text-gray-400 mt-1">Enter a URL for the main product image, or leave blank for placeholder</p>
+          </div>
+          <div>
+            <label className={labelClass}>Gallery Images</label>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="url"
+                value={galleryInput}
+                onChange={(e) => setGalleryInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addGalleryImage(); } }}
+                className={inputClass}
+                placeholder="https://example.com/gallery-image.jpg"
+              />
+              <button type="button" onClick={addGalleryImage} className="px-4 py-2.5 bg-teal text-white rounded-lg text-sm font-medium hover:bg-teal/90 transition-colors shrink-0">
+                Add
+              </button>
+            </div>
+            {form.gallery.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {form.gallery.map((url, i) => (
+                  <div key={i} className="flex items-center gap-1 bg-gray-100 rounded-lg px-3 py-1.5 text-xs text-gray-600">
+                    <span className="max-w-[200px] truncate">{url}</span>
+                    <button type="button" onClick={() => removeGalleryImage(i)} className="text-gray-400 hover:text-red-500">
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

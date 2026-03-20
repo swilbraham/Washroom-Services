@@ -97,3 +97,61 @@ export interface Industry {
   image: string;
   benefits: string[];
 }
+
+// ── Cart ─────────────────────────────────────────────────────────────────────
+
+export interface CartItem {
+  productId: string;
+  slug: string;
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+}
+
+// ── Auth / User ──────────────────────────────────────────────────────────────
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  phone: string;
+  company: string;
+  passwordHash: string; // simple hash for demo only
+  createdAt: string;
+}
+
+// ── Orders ───────────────────────────────────────────────────────────────────
+
+export type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+
+export interface OrderItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export interface Order {
+  id: string;
+  userId: string | null; // null = guest
+  guestEmail: string | null;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  company: string;
+  shippingAddress: {
+    line1: string;
+    line2: string;
+    city: string;
+    county: string;
+    postcode: string;
+  };
+  items: OrderItem[];
+  subtotal: number;
+  vat: number;
+  total: number;
+  status: OrderStatus;
+  stripeSessionId: string | null;
+  createdAt: string;
+}

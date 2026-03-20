@@ -14,14 +14,17 @@ import {
   Menu,
   X,
   LogOut,
+  ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuthProvider, useAuth } from "@/components/admin/AuthProvider";
 import { LoginPage } from "@/components/admin/LoginPage";
+import { OrderProvider } from "@/lib/order-store";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/products", label: "Products", icon: Package },
+  { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { href: "/admin/enquiries", label: "Enquiries", icon: MessageSquare },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/faq", label: "FAQ Content", icon: HelpCircle },
@@ -142,7 +145,9 @@ export default function AdminLayout({
 }) {
   return (
     <AuthProvider>
-      <AdminShell>{children}</AdminShell>
+      <OrderProvider>
+        <AdminShell>{children}</AdminShell>
+      </OrderProvider>
     </AuthProvider>
   );
 }
