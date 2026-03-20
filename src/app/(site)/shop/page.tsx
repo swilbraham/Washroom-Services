@@ -26,7 +26,10 @@ type ViewMode = "grid" | "list";
 
 function ShopContent() {
   const searchParams = useSearchParams();
-  const initialCategory = searchParams.get("category") || "";
+  const categorySlug = searchParams.get("category") || "";
+  const initialCategory = categorySlug
+    ? categories.find((c) => c.slug === categorySlug)?.name || ""
+    : "";
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState(initialCategory);

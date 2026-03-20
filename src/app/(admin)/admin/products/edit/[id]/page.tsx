@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -9,9 +9,10 @@ import { industries } from "@/data/industries";
 import { slugify } from "@/lib/utils";
 import { useProducts } from "@/lib/product-store";
 
-export default function NewProductPage() {
+export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
-  const { addProduct } = useProducts();
+  const { products, loaded, updateProduct } = useProducts();
   const [toast, setToast] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
@@ -28,12 +29,46 @@ export default function NewProductPage() {
     benefits: "",
   });
 
+  const product = products.find((p) => p.id === id);
+
+  useEffect(() => {
+    if (product) {
+      setForm({
+        name: product.name,
+        slug: product.slug,
+        category: product.category,
+        shortDescription: product.shortDescription,
+        description: product.description,
+        price: product.price.toString(),
+        sku: product.sku,
+        stock: product.stock,
+        featured: product.featured,
+        industries: [...product.industries],
+        features: product.features.join("\n"),
+        benefits: product.benefits.join("\n"),
+      });
+    }
+  }, [product]);
+
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(null), 3000);
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  if (!loaded) return null;
+
+  if (!product) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-lg text-gray-500 mb-4">Product not found</p>
+        <Link href="/admin/products" className="text-teal hover:underline text-sm">
+          Back to Products
+        </Link>
+      </div>
+    );
+  }
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -62,27 +97,21 @@ export default function NewProductPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const id = `prod-${Date.now()}`;
-    addProduct({
-      id,
-      slug: form.slug,
+    updateProduct(id, {
       name: form.name,
+      slug: form.slug,
       category: form.category,
       shortDescription: form.shortDescription,
       description: form.description,
       features: form.features.split("\n").filter(Boolean),
       benefits: form.benefits.split("\n").filter(Boolean),
-      image: `/images/products/${form.slug}.jpg`,
-      gallery: [],
       featured: form.featured,
       price: parseFloat(form.price) || 0,
       sku: form.sku,
       stock: form.stock,
       industries: form.industries,
-      faqs: [],
-      specifications: {},
     });
-    setToast("Product created successfully!");
+    setToast("Product updated successfully!");
     setTimeout(() => router.push("/admin/products"), 1000);
   };
 
@@ -99,7 +128,7 @@ export default function NewProductPage() {
         >
           <ArrowLeft size={20} />
         </Link>
-        <h2 className="text-2xl font-bold text-navy">Add New Product</h2>
+        <h2 className="text-2xl font-bold text-navy">Edit Product</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -108,11 +137,11 @@ export default function NewProductPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label htmlFor="name" className={labelClass}>Product Name</label>
-              <input id="name" name="name" type="text" required value={form.name} onChange={handleChange} className={inputClass} placeholder="e.g. Touch-Free Soap Dispenser" />
+              <input id="name" name="name" type="text" required value={form.name} onChange={handleChange} className={inputClass} />
             </div>
             <div>
               <label htmlFor="slug" className={labelClass}>Slug</label>
-              <input id="slug" name="slug" type="text" required value={form.slug} onChange={handleChange} className={inputClass} placeholder="auto-generated-from-name" />
+              <input id="slug" name="slug" type="text" required value={form.slug} onChange={handleChange} className={inputClass} />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -127,16 +156,16 @@ export default function NewProductPage() {
             </div>
             <div>
               <label htmlFor="sku" className={labelClass}>SKU</label>
-              <input id="sku" name="sku" type="text" required value={form.sku} onChange={handleChange} className={inputClass} placeholder="e.g. WS-1001" />
+              <input id="sku" name="sku" type="text" required value={form.sku} onChange={handleChange} className={inputClass} />
             </div>
           </div>
           <div>
             <label htmlFor="shortDescription" className={labelClass}>Short Description</label>
-            <input id="shortDescription" name="shortDescription" type="text" required value={form.shortDescription} onChange={handleChange} className={inputClass} placeholder="Brief product summary" />
+            <input id="shortDescription" name="shortDescription" type="text" required value={form.shortDescription} onChange={handleChange} className={inputClass} />
           </div>
           <div>
             <label htmlFor="description" className={labelClass}>Full Description</label>
-            <textarea id="description" name="description" required rows={4} value={form.description} onChange={handleChange} className={inputClass} placeholder="Detailed product description" />
+            <textarea id="description" name="description" required rows={4} value={form.description} onChange={handleChange} className={inputClass} />
           </div>
         </div>
 
@@ -145,7 +174,7 @@ export default function NewProductPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div>
               <label htmlFor="price" className={labelClass}>Price (&pound;)</label>
-              <input id="price" name="price" type="number" step="0.01" min="0" required value={form.price} onChange={handleChange} className={inputClass} placeholder="0.00" />
+              <input id="price" name="price" type="number" step="0.01" min="0" required value={form.price} onChange={handleChange} className={inputClass} />
             </div>
             <div>
               <label htmlFor="stock" className={labelClass}>Stock Status</label>
@@ -180,17 +209,17 @@ export default function NewProductPage() {
           <h3 className="text-lg font-semibold text-navy">Features &amp; Benefits</h3>
           <div>
             <label htmlFor="features" className={labelClass}>Features (one per line)</label>
-            <textarea id="features" name="features" rows={4} value={form.features} onChange={handleChange} className={inputClass} placeholder="Enter each feature on a new line" />
+            <textarea id="features" name="features" rows={4} value={form.features} onChange={handleChange} className={inputClass} />
           </div>
           <div>
             <label htmlFor="benefits" className={labelClass}>Benefits (one per line)</label>
-            <textarea id="benefits" name="benefits" rows={4} value={form.benefits} onChange={handleChange} className={inputClass} placeholder="Enter each benefit on a new line" />
+            <textarea id="benefits" name="benefits" rows={4} value={form.benefits} onChange={handleChange} className={inputClass} />
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <button type="submit" className="bg-teal text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-teal/90 transition-colors">
-            Create Product
+            Save Changes
           </button>
           <Link href="/admin/products" className="bg-gray-100 text-gray-600 px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
             Cancel

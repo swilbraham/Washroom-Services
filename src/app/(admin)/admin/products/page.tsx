@@ -3,16 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, Plus, Star, Pencil, Trash2 } from "lucide-react";
-import { products as initialProducts } from "@/data/products";
 import { categories } from "@/data/categories";
 import { formatPrice, cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import type { Product } from "@/types";
+import { useProducts } from "@/lib/product-store";
 
 export default function AdminProductsPage() {
-  const [productsList, setProductsList] = useState<Product[]>([
-    ...initialProducts,
-  ]);
+  const { products, loaded, toggleFeatured, deleteProduct } = useProducts();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [toast, setToast] = useState<string | null>(null);
@@ -24,25 +21,23 @@ export default function AdminProductsPage() {
     }
   }, [toast]);
 
-  const filtered = productsList.filter((p) => {
-    const matchesSearch = p.name
-      .toLowerCase()
-      .includes(search.toLowerCase());
+  if (!loaded) return null;
+
+  const filtered = products.filter((p) => {
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
     const matchesCategory =
       categoryFilter === "all" || p.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
-  const toggleFeatured = (id: string) => {
-    setProductsList((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, featured: !p.featured } : p))
-    );
+  const handleToggleFeatured = (id: string) => {
+    toggleFeatured(id);
     setToast("Product updated");
   };
 
-  const deleteProduct = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      setProductsList((prev) => prev.filter((p) => p.id !== id));
+  const handleDelete = (id: string, name: string) => {
+    if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
+      deleteProduct(id);
       setToast("Product deleted");
     }
   };
@@ -97,24 +92,12 @@ export default function AdminProductsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50">
-                <th className="text-left px-6 py-3 text-gray-500 font-medium">
-                  Name
-                </th>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium">
-                  Category
-                </th>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium">
-                  Price
-                </th>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium">
-                  Stock
-                </th>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium">
-                  Featured
-                </th>
-                <th className="text-left px-6 py-3 text-gray-500 font-medium">
-                  Actions
-                </th>
+                <th className="text-left px-6 py-3 text-gray-500 font-medium">Name</th>
+                <th className="text-left px-6 py-3 text-gray-500 font-medium">Category</th>
+                <th className="text-left px-6 py-3 text-gray-500 font-medium">Price</th>
+                <th className="text-left px-6 py-3 text-gray-500 font-medium">Stock</th>
+                <th className="text-left px-6 py-3 text-gray-500 font-medium">Featured</th>
+                <th className="text-left px-6 py-3 text-gray-500 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -123,21 +106,15 @@ export default function AdminProductsPage() {
                   key={product.id}
                   className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
                 >
-                  <td className="px-6 py-3 font-medium text-navy">
-                    {product.name}
-                  </td>
-                  <td className="px-6 py-3 text-gray-600">
-                    {product.category}
-                  </td>
-                  <td className="px-6 py-3 text-gray-600">
-                    {formatPrice(product.price)}
-                  </td>
+                  <td className="px-6 py-3 font-medium text-navy">{product.name}</td>
+                  <td className="px-6 py-3 text-gray-600">{product.category}</td>
+                  <td className="px-6 py-3 text-gray-600">{formatPrice(product.price)}</td>
                   <td className="px-6 py-3">
                     <StatusBadge status={product.stock} />
                   </td>
                   <td className="px-6 py-3">
                     <button
-                      onClick={() => toggleFeatured(product.id)}
+                      onClick={() => handleToggleFeatured(product.id)}
                       className="text-gray-400 hover:text-yellow-500 transition-colors"
                     >
                       <Star
@@ -151,14 +128,14 @@ export default function AdminProductsPage() {
                   <td className="px-6 py-3">
                     <div className="flex items-center gap-2">
                       <Link
-                        href="/admin/products/new"
+                        href={`/admin/products/edit/${product.id}`}
                         className="p-1.5 text-gray-400 hover:text-teal rounded transition-colors"
                         title="Edit"
                       >
                         <Pencil size={16} />
                       </Link>
                       <button
-                        onClick={() => deleteProduct(product.id)}
+                        onClick={() => handleDelete(product.id, product.name)}
                         className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"
                         title="Delete"
                       >
@@ -170,10 +147,7 @@ export default function AdminProductsPage() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-12 text-center text-gray-400"
-                  >
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
                     No products found.
                   </td>
                 </tr>
@@ -185,7 +159,7 @@ export default function AdminProductsPage() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 bg-success text-white px-5 py-3 rounded-lg shadow-lg text-sm font-medium z-50 animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-6 right-6 bg-success text-white px-5 py-3 rounded-lg shadow-lg text-sm font-medium z-50">
           {toast}
         </div>
       )}
